@@ -21,7 +21,7 @@ struct UniformDiffusionStencil <: AbstractDiffEqLinearOperator{Float64}
   dx::Float64
 end
 size(L::UniformDiffusionStencil) = (L.M, L.M+2)
-*(L::UniformDiffusionStencil, x::AbstractVector{Float64}) = [x[i] + x[i+2] - 2x[i+1] for i = 1:L.M] / L.dx^2
+*(L::UniformDiffusionStencil, xbar::AbstractVector{Float64}) = [xbar[i] + xbar[i+2] - 2xbar[i+1] for i = 1:L.M] / L.dx^2
 function convert(::Type{AbstractMatrix}, L::UniformDiffusionStencil)
   # spdiagm/diagm always creates a square matrix so we have to construct manually.
   # It's likely that more efficient constructions exist.
@@ -45,15 +45,15 @@ function UniformUpwindStencil(stencil, M, dx)
   UniformUpwindStencil(stencil, M, dx, coeff)
 end
 size(L::UniformUpwindStencil) = (L.M, L.M + length(L.stencil))
-function *(L::UniformUpwindStencil, x::AbstractVector{Float64})
+function *(L::UniformUpwindStencil, xbar::AbstractVector{Float64})
   # This only covers the case when L.coeff is a scalar. Need to add support for
   # vector coefficients later.
   c = convert(Number, L.coeff)
   # This part should be changed to use the stencil coefficients in L
   if c > 0 # backwards difference
-    return [x[i+1] - x[i] for i = 1:L.M] * (c / L.dx)
+    return [xbar[i+1] - xbar[i] for i = 1:L.M] * (c / L.dx)
   else # forward difference
-    return [x[i+2] - x[i+1] for i = 1:L.M] * (c / L.dx)
+    return [xbar[i+2] - xbar[i+1] for i = 1:L.M] * (c / L.dx)
   end
 end
 function convert(::Type{AbstractMatrix}, L::UniformUpwindStencil)
